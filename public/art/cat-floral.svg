@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1100" width="900" height="1100"><defs>
+      <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6dcd9"/><stop offset="1" stop-color="#d9a3a6"/></linearGradient>
+      <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><stop offset=".45" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></linearGradient>
+      <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter>
+  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="60"/></filter>
+  <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .06 0"/></filter>
+    </defs>
+    <rect width="900" height="1100" fill="url(#bg)"/>
+    <circle cx="450" cy="520" r="330" fill="#fff0ee" opacity=".5" filter="url(#glow)"/>
+    <ellipse cx="600" cy="520" rx="150" ry="78" transform="rotate(0 600 520)" fill="#f2b6bb" opacity=".5"/><ellipse cx="556.0660171779821" cy="626.0660171779821" rx="150" ry="78" transform="rotate(45 556.0660171779821 626.0660171779821)" fill="#f2b6bb" opacity=".5"/><ellipse cx="450" cy="670" rx="150" ry="78" transform="rotate(90 450 670)" fill="#f2b6bb" opacity=".5"/><ellipse cx="343.93398282201787" cy="626.0660171779821" rx="150" ry="78" transform="rotate(135 343.93398282201787 626.0660171779821)" fill="#f2b6bb" opacity=".5"/><ellipse cx="300" cy="520" rx="150" ry="78" transform="rotate(180 300 520)" fill="#f2b6bb" opacity=".5"/><ellipse cx="343.93398282201787" cy="413.93398282201787" rx="150" ry="78" transform="rotate(225 343.93398282201787 413.93398282201787)" fill="#f2b6bb" opacity=".5"/><ellipse cx="450" cy="370" rx="150" ry="78" transform="rotate(270 450 370)" fill="#f2b6bb" opacity=".5"/><ellipse cx="556.0660171779821" cy="413.93398282201787" rx="150" ry="78" transform="rotate(315 556.0660171779821 413.93398282201787)" fill="#f2b6bb" opacity=".5"/><circle cx="450" cy="520" r="70" fill="#fbe9c9" opacity=".9"/>
+    <rect width="900" height="1100" fill="url(#shade)"/>
+    <rect width="900" height="1100" filter="url(#grain)"/></svg>

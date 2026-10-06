@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1100" width="900" height="1100"><defs>
+      <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e3efe2"/><stop offset="1" stop-color="#8fb4a3"/></linearGradient>
+      <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><stop offset=".45" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></linearGradient>
+      <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter>
+  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="60"/></filter>
+  <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .06 0"/></filter>
+    </defs>
+    <rect width="900" height="1100" fill="url(#bg)"/>
+    <circle cx="450" cy="520" r="330" fill="#f6fbe9" opacity=".5" filter="url(#glow)"/>
+    <path d="M-50 330 Q 175 250 450 330 T 950 330" fill="none" stroke="#5f8f7c" stroke-opacity=".7" stroke-width="18" stroke-linecap="round"/><path d="M-50 415 Q 175 335 450 415 T 950 415" fill="none" stroke="#cfe3b4" stroke-opacity=".7" stroke-width="16.5" stroke-linecap="round"/><path d="M-50 500 Q 175 420 450 500 T 950 500" fill="none" stroke="#5f8f7c" stroke-opacity=".7" stroke-width="15" stroke-linecap="round"/><path d="M-50 585 Q 175 505 450 585 T 950 585" fill="none" stroke="#cfe3b4" stroke-opacity=".7" stroke-width="13.5" stroke-linecap="round"/><path d="M-50 670 Q 175 590 450 670 T 950 670" fill="none" stroke="#5f8f7c" stroke-opacity=".7" stroke-width="12" stroke-linecap="round"/><path d="M-50 755 Q 175 675 450 755 T 950 755" fill="none" stroke="#cfe3b4" stroke-opacity=".7" stroke-width="10.5" stroke-linecap="round"/><path d="M-50 840 Q 175 760 450 840 T 950 840" fill="none" stroke="#5f8f7c" stroke-opacity=".7" stroke-width="9" stroke-linecap="round"/><circle cx="660" cy="250" r="96" fill="#fbe58f" opacity=".85"/>
+    <rect width="900" height="1100" fill="url(#shade)"/>
+    <rect width="900" height="1100" filter="url(#grain)"/></svg>

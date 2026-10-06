@@ -1,0 +1,241 @@
+@import "tailwindcss";
+
+/*
+ * Theme tokens.
+ * --p-* is the palette chosen in Admin → Theme (injected by the root layout).
+ * --c-* is what components actually use; "tone" classes below remap it so any
+ * section can sit on a dark, primary or surface background without extra styles.
+ */
+:root {
+  --p-bg: #faf7f2;
+  --p-surface: #f1ebe1;
+  --p-text: #1f1b16;
+  --p-muted: #6f665a;
+  --p-primary: #1f1b16;
+  --p-primary-text: #faf7f2;
+  --p-accent: #a07a35;
+  --p-border: #e2d9cb;
+  --f-heading: "Cormorant Garamond", serif;
+  --f-body: "Jost", sans-serif;
+  --r-base: 6px;
+  --r-btn: 4px;
+  --w-container: 1280px;
+  --ratio-card: 4 / 5;
+  --heading-case: none;
+  --heading-spacing: 0;
+}
+
+/* .theme-scope lets an element (the admin theme preview) apply its own palette. */
+:root,
+.theme-scope {
+  --c-bg: var(--p-bg);
+  --c-surface: var(--p-surface);
+  --c-text: var(--p-text);
+  --c-muted: var(--p-muted);
+  --c-primary: var(--p-primary);
+  --c-primary-text: var(--p-primary-text);
+  --c-accent: var(--p-accent);
+  --c-border: var(--p-border);
+}
+
+.tone-surface {
+  --c-bg: var(--p-surface);
+  --c-surface: var(--p-bg);
+}
+
+.tone-dark {
+  --c-bg: var(--p-text);
+  --c-surface: color-mix(in srgb, var(--p-text) 88%, var(--p-bg));
+  --c-text: var(--p-bg);
+  --c-muted: color-mix(in srgb, var(--p-bg) 68%, var(--p-text));
+  --c-primary: var(--p-bg);
+  --c-primary-text: var(--p-text);
+  --c-accent: color-mix(in srgb, var(--p-accent) 60%, var(--p-bg));
+  --c-border: color-mix(in srgb, var(--p-bg) 20%, var(--p-text));
+}
+
+.tone-primary {
+  --c-bg: var(--p-primary);
+  --c-surface: color-mix(in srgb, var(--p-primary) 88%, var(--p-primary-text));
+  --c-text: var(--p-primary-text);
+  --c-muted: color-mix(in srgb, var(--p-primary-text) 72%, var(--p-primary));
+  --c-primary: var(--p-primary-text);
+  --c-primary-text: var(--p-primary);
+  --c-accent: var(--p-primary-text);
+  --c-border: color-mix(in srgb, var(--p-primary-text) 22%, var(--p-primary));
+}
+
+/* Text placed directly on a photograph. */
+.tone-image-light {
+  --c-text: #ffffff;
+  --c-muted: rgb(255 255 255 / 0.82);
+  --c-primary: #ffffff;
+  --c-primary-text: #14110e;
+  --c-accent: rgb(255 255 255 / 0.9);
+  --c-border: rgb(255 255 255 / 0.45);
+}
+
+.tone-image-dark {
+  --c-text: #14110e;
+  --c-muted: rgb(20 17 14 / 0.75);
+  --c-primary: #14110e;
+  --c-primary-text: #ffffff;
+  --c-accent: rgb(20 17 14 / 0.85);
+  --c-border: rgb(20 17 14 / 0.35);
+}
+
+@theme inline {
+  --color-bg: var(--c-bg);
+  --color-surface: var(--c-surface);
+  --color-ink: var(--c-text);
+  --color-muted: var(--c-muted);
+  --color-primary: var(--c-primary);
+  --color-on-primary: var(--c-primary-text);
+  --color-accent: var(--c-accent);
+  --color-line: var(--c-border);
+  --font-heading: var(--f-heading);
+  --font-body: var(--f-body);
+  --radius-theme: var(--r-base);
+  --radius-btn: var(--r-btn);
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-fade-up: fade-up 0.7s ease both;
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-family: var(--f-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+@utility heading {
+  font-family: var(--f-heading);
+  font-weight: 500;
+  line-height: 1.08;
+  text-transform: var(--heading-case);
+  letter-spacing: var(--heading-spacing);
+}
+
+@utility link-underline {
+  text-decoration-line: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+  &:hover {
+    opacity: 0.7;
+  }
+}
+
+@layer components {
+  .store {
+    @apply bg-bg text-ink font-body;
+  }
+
+  .eyebrow {
+    @apply text-accent text-xs font-medium tracking-[0.24em] uppercase;
+  }
+
+  .container-page {
+    @apply mx-auto w-full px-5 md:px-8;
+    max-width: var(--w-container);
+  }
+
+  .btn {
+    @apply rounded-btn inline-flex cursor-pointer items-center justify-center gap-2 border px-6 py-3 text-[0.8rem] font-medium tracking-[0.14em] whitespace-nowrap uppercase transition duration-200 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply border-primary bg-primary text-on-primary hover:opacity-85;
+  }
+
+  [data-btn="outline"] .btn-primary {
+    @apply text-primary hover:bg-primary hover:text-on-primary bg-transparent hover:opacity-100;
+  }
+
+  .btn-outline {
+    @apply border-ink/30 text-ink hover:border-ink bg-transparent;
+  }
+
+  .btn-sm {
+    @apply px-4 py-2 text-[0.7rem];
+  }
+
+  .field {
+    @apply rounded-theme border-line bg-bg text-ink placeholder:text-muted/70 focus:border-ink w-full border px-4 py-3 text-sm transition outline-none;
+  }
+
+  .field-label {
+    @apply text-muted mb-1.5 block text-xs font-medium tracking-wider uppercase;
+  }
+
+  .card-media {
+    aspect-ratio: var(--ratio-card);
+  }
+
+  .prose-store {
+    @apply text-muted leading-relaxed;
+  }
+  .prose-store > * + * {
+    @apply mt-4;
+  }
+  .prose-store h2 {
+    @apply heading text-ink mt-10 text-2xl md:text-3xl;
+  }
+  .prose-store h3 {
+    @apply heading text-ink mt-8 text-xl md:text-2xl;
+  }
+  .prose-store ul {
+    @apply list-disc space-y-1.5 pl-5;
+  }
+  .prose-store ol {
+    @apply list-decimal space-y-1.5 pl-5;
+  }
+  .prose-store a {
+    @apply text-ink link-underline;
+  }
+  .prose-store strong {
+    @apply text-ink font-medium;
+  }
+}
+
+/* Product cards pick up the "boxed" card style chosen in the theme editor. */
+[data-card="boxed"] .product-card {
+  @apply border-line bg-surface rounded-theme border p-3;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000"><defs>
+      <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e6ecdc"/><stop offset="1" stop-color="#c8d6b9"/></linearGradient>
+      <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter>
+  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="60"/></filter>
+  <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .06 0"/></filter>
+    <linearGradient id="liq-a" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#bdd193"/><stop offset="1" stop-color="#7b9853"/>
+    </linearGradient>
+    <linearGradient id="cap-a" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1d1b19"/><stop offset=".45" stop-color="#5c5853"/><stop offset="1" stop-color="#1d1b19"/>
+    </linearGradient>
+    <clipPath id="clip-a"><rect x="-112" y="-140" width="224" height="450" rx="34"/></clipPath>
+    </defs>
+    <rect width="800" height="1000" fill="url(#bg)"/>
+    <circle cx="400" cy="470" r="250" fill="#f6fbe9" opacity=".55" filter="url(#glow)"/>
+    <rect x="170" y="130" width="460" height="760" rx="230" fill="#fff" opacity="0.34"/>
+    <rect y="826" width="800" height="174" fill="#000" opacity="0.06"/>
+    <rect y="826" width="800" height="2" fill="#fff" opacity="0.5"/>
+    
+  <g transform="translate(400 528) scale(0.94)">
+    <ellipse cx="0" cy="316" rx="190" ry="15" fill="#000" opacity=".2" filter="url(#soft)"/>
+    <g fill="url(#cap-a)"><rect x="-44" y="-310" width="88" height="152" rx="6"/></g>
+    <g fill="#1d1b19" opacity=".85"><rect x="-36" y="-160" width="72" height="22"/></g>
+    <g fill="#fff" fill-opacity=".22" stroke="#fff" stroke-opacity=".6" stroke-width="3"><rect x="-112" y="-140" width="224" height="450" rx="34"/></g>
+    <g clip-path="url(#clip-a)">
+      <rect x="-240" y="-92" width="480" height="640" fill="url(#liq-a)" opacity=".94"/>
+      <rect x="-240" y="-92" width="480" height="5" fill="#fff" opacity=".35"/>
+      <rect x="-240" y="276" width="480" height="40" fill="#000" opacity=".1"/>
+      <rect x="-92" y="-90" width="14" height="340" rx="7" fill="#fff" opacity=".38"/>
+      <rect x="-68" y="-60" width="5" height="220" rx="2.5" fill="#fff" opacity=".22"/>
+    </g>
+    <g transform="translate(0 100)">
+        <rect x="-84" y="-66" width="168" height="132" fill="#f7f1e3"/>
+        <rect x="-76" y="-58" width="152" height="116" fill="none" stroke="#2a2118" stroke-opacity=".35"/>
+        <text y="-6" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="21" letter-spacing="4" fill="#2a2118">VETIVER</text>
+        <line x1="-22" x2="22" y1="14" y2="14" stroke="#2a2118" stroke-opacity=".5"/>
+        <text y="36" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="9" letter-spacing="3" fill="#2a2118" fill-opacity=".7">EAU DE PARFUM</text>
+      </g>
+  </g>
+    <rect width="800" height="1000" filter="url(#grain)"/></svg>
