@@ -15,6 +15,20 @@
       "when": 1791310780198,
       "tag": "0001_demo_photos",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791314061945,
+      "tag": "0002_order_notifications",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791344777870,
+      "tag": "0003_account_emails",
+      "breakpoints": true
     }
   ]
 }

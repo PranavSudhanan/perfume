@@ -292,7 +292,14 @@ export const checkoutGroups: Group[] = [
       { name: "shippingFlat", label: "Shipping fee", type: "money", half: true },
       { name: "freeShippingAbove", label: "Free shipping above", type: "money", half: true, help: "0 turns free shipping off." },
       { name: "taxPercent", label: "Tax added at checkout (%)", type: "number", half: true, help: "Use 0 if your prices already include tax." },
-      { name: "country", label: "Default country", type: "text", half: true },
+      {
+        name: "shipCountries",
+        label: "Countries you deliver to",
+        type: "multiselect",
+        source: "countries",
+        addLabel: "Add a country…",
+        help: "Customers can only choose these at checkout. The first one is preselected.",
+      },
     ],
   },
   {
@@ -312,6 +319,28 @@ export const checkoutGroups: Group[] = [
     fields: [
       { name: "orderPrefix", label: "Order number prefix", type: "text", half: true, placeholder: "AU" },
       { name: "checkoutNote", label: "Note shown at checkout and on product pages", type: "textarea" },
+    ],
+  },
+  {
+    title: "Emails and texts to customers",
+    description:
+      "The confirmation goes out as soon as an order is placed (or paid, for online payments). Shipping updates go out when you change an order's status.",
+    fields: [
+      { name: "confirmationEmail", label: "Send a confirmation email", type: "boolean" },
+      { name: "emailNote", label: "Extra line in the email", type: "textarea", help: "Appears under the greeting. Leave empty for none." },
+      {
+        name: "shippingEmail",
+        label: "Send shipping update emails",
+        type: "boolean",
+        help: "One email when you mark an order as shipped (with its tracking details), and one when you mark it as delivered.",
+      },
+      { name: "confirmationSms", label: "Send a confirmation text message (SMS)", type: "boolean" },
+      {
+        name: "smsTemplate",
+        label: "Text message",
+        type: "textarea",
+        help: "Placeholders: {store} {name} {order} {total} {link}. Keep it short; long messages are billed as several.",
+      },
     ],
   },
 ];

@@ -5,10 +5,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { Bottle } from "@/components/store/bottle";
+import { OrderPlacedDialog } from "@/components/store/order-placed-dialog";
 import { PayNow } from "@/components/store/pay-now";
 import { db } from "@/db";
 import { orders } from "@/db/schema";
 import { getSettings } from "@/lib/data";
+import { firstName } from "@/lib/notify/templates";
 import { razorpayConfigured } from "@/lib/razorpay";
 import { formatDate, formatMoney, safeHref } from "@/lib/utils";
 
@@ -51,9 +53,24 @@ export default async function OrderPage({ params, searchParams }: Props) {
   const needsPayment =
     order.paymentMethod === "razorpay" && order.paymentStatus !== "paid" && !cancelled;
   const tracking = safeHref(order.trackingUrl, "");
+  // The popup appears once the order is really confirmed: at once for cash on
+  // delivery, and after payment succeeds for online orders.
+  const justPlaced = query.placed === "1" && !needsPayment && !cancelled;
+  const sent = order.notifications ?? {};
 
   return (
     <div className="container-page py-12 md:py-16">
+      {justPlaced && (
+        <OrderPlacedDialog
+          orderId={order.id}
+          orderNumber={order.orderNumber}
+          name={firstName(order.name)}
+          total={money(order.total)}
+          cashOnDelivery={order.paymentMethod === "cod"}
+          emailedTo={sent.email?.status === "sent" ? order.email : null}
+          textedTo={sent.sms?.status === "sent" ? order.phone : null}
+        />
+      )}
       <div className="mx-auto max-w-3xl">
         <header className="text-center">
           <p className="eyebrow mb-3">Order {order.orderNumber}</p>

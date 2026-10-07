@@ -30,8 +30,25 @@ export const users = pgTable("users", {
   role: text("role", { enum: ["customer", "admin"] }).notNull().default("customer"),
   phone: text("phone"),
   address: jsonb("address").$type<Address>(),
+  /** Sessions issued before this moment are no longer accepted. */
+  passwordChangedAt: timestamp("password_changed_at", { withTimezone: true }),
   createdAt: createdAt(),
 });
+
+/** One-time links emailed to people who forgot their password. Only a hash of the token is kept. */
+export const passwordResets = pgTable(
+  "password_resets",
+  {
+    id: id(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull().unique(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("password_resets_user_idx").on(t.userId, t.createdAt)],
+);
 
 /** Key/value store for everything the admin can configure: store, theme, navigation, checkout, builder. */
 export const settings = pgTable("settings", {
@@ -156,6 +173,10 @@ export const orders = pgTable(
     adminNote: text("admin_note"),
     gatewayOrderId: text("gateway_order_id"),
     gatewayPaymentId: text("gateway_payment_id"),
+    /** Set once the order confirmation has been dispatched, so it is never sent twice. */
+    confirmationSentAt: timestamp("confirmation_sent_at", { withTimezone: true }),
+    /** Outcome of each message sent to the customer about this order. */
+    notifications: jsonb("notifications").$type<OrderNotifications>(),
     createdAt: createdAt(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -283,6 +304,21 @@ export type Address = {
   state: string;
   postalCode: string;
   country: string;
+};
+
+export type Delivery = {
+  status: "sent" | "failed" | "skipped";
+  /** Why it failed or was skipped. Shown to admins only. */
+  detail?: string;
+  at: string;
+};
+
+/** `email` and `sms` are the order confirmation; the others are the later status emails. */
+export type OrderNotifications = {
+  email?: Delivery;
+  sms?: Delivery;
+  shipped?: Delivery;
+  delivered?: Delivery;
 };
 
 /** A page section as stored in `pages.sections`. `props` shape depends on `type` (see lib/sections.ts). */

@@ -135,7 +135,12 @@ async function ensureAdmin(db: Db, reset: boolean) {
   await db
     .insert(schema.users)
     .values({ name: "Store Admin", email, passwordHash, role: "admin" })
-    .onConflictDoUpdate({ target: schema.users.email, set: { passwordHash, role: "admin" } });
+    .onConflictDoUpdate({
+      target: schema.users.email,
+      // Also signs out existing sessions. Rounded down to the second, matching
+      // how session issue times are compared.
+      set: { passwordHash, role: "admin", passwordChangedAt: new Date(Math.floor(Date.now() / 1000) * 1000) },
+    });
   console.log(`• Admin account ${reset ? "reset" : "created"}: ${email}`);
 }
 

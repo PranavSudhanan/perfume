@@ -5,6 +5,7 @@ import { updateTag } from "next/cache";
 import { z } from "zod";
 import { db } from "@/db";
 import {
+  type Delivery,
   builderOptions,
   categories,
   coupons,
@@ -23,6 +24,9 @@ import {
 import { requireAdmin, UnauthorizedError } from "@/lib/auth";
 import { SETTINGS_KEYS, type SettingsKey } from "@/lib/config";
 import { TAGS } from "@/lib/data";
+import { findCountry } from "@/lib/geo";
+import { sendTestEmail } from "@/lib/notify/account-emails";
+import { sendOrderConfirmation, sendShippingUpdate } from "@/lib/notify/order-emails";
 import type { ActionResult } from "@/lib/result";
 import { SECTION_MAP } from "@/lib/sections";
 import { FONT_NAMES } from "@/lib/theme";
@@ -158,8 +162,16 @@ const settingsSchemas: Record<SettingsKey, z.ZodType> = {
     codEnabled: z.boolean(),
     onlineEnabled: z.boolean(),
     orderPrefix: text(6),
-    country: text(60),
+    shipCountries: z
+      .array(z.string().refine((name) => !!findCountry(name), "Choose countries from the list."))
+      .min(1, "Choose at least one country you deliver to.")
+      .max(250),
     checkoutNote: text(400),
+    confirmationEmail: z.boolean(),
+    confirmationSms: z.boolean(),
+    shippingEmail: z.boolean(),
+    emailNote: text(500),
+    smsTemplate: text(320).min(1, "Enter the text message, or switch text messages off."),
   }),
   builder: z
     .object({
@@ -523,6 +535,7 @@ const orderUpdateSchema = z.object({
 export async function updateOrderAction(input: unknown) {
   return guard(async () => {
     const { id, ...changes } = orderUpdateSchema.parse(input);
+    let previousStatus: string | undefined;
     const restocked = await db.transaction(async (tx) => {
       const [current] = await tx
         .select({ status: orders.status })
@@ -530,6 +543,7 @@ export async function updateOrderAction(input: unknown) {
         .where(eq(orders.id, id))
         .for("update");
       if (!current) throw new UserError("This order no longer exists.");
+      previousStatus = current.status;
       if (current.status === "cancelled" && changes.status !== "cancelled") {
         throw new UserError("A cancelled order can't be reopened — its stock was already returned.");
       }
@@ -555,7 +569,70 @@ export async function updateOrderAction(input: unknown) {
       return true;
     });
     if (restocked) updateTag(TAGS.catalog);
+
+    // Moving an order to "shipped" or "delivered" tells the customer by email.
+    const stage = changes.status === "shipped" || changes.status === "delivered" ? changes.status : null;
+    if (!stage || stage === previousStatus) return {};
+    return describeDelivery(STAGE_EMAIL[stage], await sendShippingUpdate(id, stage));
+  });
+}
+
+/* --------------------------------- notifications --------------------------------- */
+
+const DELIVERY_LABEL = { email: "Email", sms: "Text message" } as const;
+const STAGE_EMAIL = { shipped: "shipping email", delivered: "delivery email" } as const;
+
+/** Turns the outcome of an email sent alongside a save into the note shown to the admin. */
+function describeDelivery(what: string, delivery: Delivery | null): { message: string; warning?: boolean } {
+  if (!delivery) return { message: `Saved, but the ${what} could not be sent.`, warning: true };
+  if (delivery.status === "sent") return { message: `Saved — ${what} sent to the customer` };
+  if (delivery.status === "failed") {
+    return { message: `Saved, but the ${what} failed: ${delivery.detail ?? "unknown error"}`, warning: true };
+  }
+  return { message: `Saved. No ${what} was sent: ${delivery.detail ?? "it is turned off."}`, warning: true };
+}
+
+/** Sends (or re-sends) the shipped / delivered email for an order. */
+export async function sendShippingUpdateAction(id: string, stage: "shipped" | "delivered") {
+  return guard(async () => {
+    const parsedStage = z.enum(["shipped", "delivered"]).parse(stage);
+    const delivery = await sendShippingUpdate(z.uuid().parse(id), parsedStage);
+    if (!delivery) throw new UserError("The email could not be sent. Check the server logs.");
+    if (delivery.status !== "sent") {
+      throw new UserError(
+        `The ${STAGE_EMAIL[parsedStage]} was not sent: ${delivery.detail ?? "unknown error"}`,
+      );
+    }
     return {};
+  });
+}
+
+/** Sends the order confirmation again, e.g. after fixing a mistyped address or a failed delivery. */
+export async function resendOrderConfirmationAction(id: string) {
+  return guard(async () => {
+    const result = await sendOrderConfirmation(z.uuid().parse(id), { force: true });
+    if (!result) throw new UserError("The confirmation could not be sent. Check the server logs.");
+    const problems = (["email", "sms"] as const).flatMap((channel) => {
+      const delivery = result[channel];
+      return delivery && delivery.status === "failed"
+        ? [`${DELIVERY_LABEL[channel]} failed: ${delivery.detail ?? "unknown error"}`]
+        : [];
+    });
+    if (problems.length) throw new UserError(problems.join(" "));
+    return {};
+  });
+}
+
+/** Sends a test email to the signed-in admin, to check the email connection. */
+export async function sendTestEmailAction() {
+  return guard(async () => {
+    const me = await requireAdmin();
+    try {
+      await sendTestEmail(me.email);
+    } catch (error) {
+      throw new UserError(error instanceof Error ? error.message : "The test email could not be sent.");
+    }
+    return { to: me.email };
   });
 }
 

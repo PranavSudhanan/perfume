@@ -7,8 +7,10 @@ import { useState, useTransition } from "react";
 import type { Address } from "@/db/schema";
 import { placeOrderAction } from "@/lib/actions/shop";
 import { cart, cartSubtotal, toLines, useCart } from "@/lib/cart";
+import type { Country } from "@/lib/geo";
 import { CartThumb } from "./cart-drawer";
 import { clearCoupon, CouponField, readCoupon, Totals } from "./cart-view";
+import { RegionFields } from "./region-fields";
 import { useMoney } from "./store-context";
 import { useQuote } from "./use-quote";
 
@@ -17,7 +19,8 @@ type Method = "cod" | "razorpay";
 type Props = {
   defaults: { name: string; email: string; phone: string; address: Address | null };
   methods: Method[];
-  country: string;
+  /** Countries the store delivers to; the first is preselected. */
+  countries: Country[];
   note: string;
   signedIn: boolean;
 };
@@ -31,7 +34,7 @@ const METHOD_INFO: Record<Method, { label: string; text: string; icon: typeof Ba
   cod: { label: "Cash on delivery", text: "Pay in cash when your order arrives.", icon: Banknote },
 };
 
-export function CheckoutForm({ defaults, methods, country, note, signedIn }: Props) {
+export function CheckoutForm({ defaults, methods, countries, note, signedIn }: Props) {
   const router = useRouter();
   const money = useMoney();
   const { items, ready } = useCart();
@@ -135,21 +138,10 @@ export function CheckoutForm({ defaults, methods, country, note, signedIn }: Pro
               <span className="field-label">Apartment, landmark (optional)</span>
               <input name="line2" defaultValue={a?.line2} autoComplete="address-line2" className="field" />
             </label>
-            <label className="block">
-              <span className="field-label">City</span>
-              <input name="city" required defaultValue={a?.city} autoComplete="address-level2" className="field" />
-            </label>
-            <label className="block">
-              <span className="field-label">State</span>
-              <input name="state" required defaultValue={a?.state} autoComplete="address-level1" className="field" />
-            </label>
+            <RegionFields countries={countries} defaults={a} required />
             <label className="block">
               <span className="field-label">Postal code</span>
               <input name="postalCode" required defaultValue={a?.postalCode} autoComplete="postal-code" className="field" />
-            </label>
-            <label className="block">
-              <span className="field-label">Country</span>
-              <input name="country" required defaultValue={a?.country || country} autoComplete="country-name" className="field" />
             </label>
             <label className="block sm:col-span-2">
               <span className="field-label">Order note (optional)</span>

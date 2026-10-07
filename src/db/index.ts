@@ -5,9 +5,11 @@ import * as schema from "./schema";
 
 export type Database = NodePgDatabase<typeof schema>;
 
-const globalForDb = globalThis as unknown as { __perfumeDb?: Database };
+// Only the connection pool is shared across hot reloads. The query builder is
+// rebuilt whenever this module reloads, so it always sees the current schema.
+const globalForDb = globalThis as unknown as { __perfumePool?: Pool };
 
-function connect(): Database {
+function createPool(): Pool {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error(
@@ -22,11 +24,13 @@ function connect(): Database {
   });
   // Lets Vercel close idle connections before a function instance is suspended.
   attachDatabasePool(pool);
-  return drizzle(pool, { schema });
+  return pool;
 }
 
+let current: Database | undefined;
+
 function instance(): Database {
-  return (globalForDb.__perfumeDb ??= connect());
+  return (current ??= drizzle((globalForDb.__perfumePool ??= createPool()), { schema }));
 }
 
 /**

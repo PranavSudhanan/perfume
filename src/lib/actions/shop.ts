@@ -18,6 +18,8 @@ import {
 } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { getSettings, TAGS } from "@/lib/data";
+import { toCountries } from "@/lib/geo";
+import { sendOrderConfirmation } from "@/lib/notify/order-emails";
 import { buildQuote, MAX_LINES, MAX_QTY, type CartLineInput, type Quote } from "@/lib/pricing";
 import {
   createGatewayOrder,
@@ -90,6 +92,9 @@ function newOrderNumber(prefix: string) {
 
 class OrderError extends Error {}
 
+const MAX_ORDERS_PER_WINDOW = 5;
+const ORDER_WINDOW_MS = 15 * 60 * 1000;
+
 export async function placeOrderAction(input: unknown): Promise<ActionResult<{ orderId: string }>> {
   const parsed = orderSchema.safeParse(input);
   if (!parsed.success) return fail(firstIssue(parsed.error));
@@ -101,6 +106,27 @@ export async function placeOrderAction(input: unknown): Promise<ActionResult<{ o
   }
   if (data.paymentMethod === "razorpay" && !(checkout.onlineEnabled && razorpayConfigured())) {
     return fail("Online payment is not available right now.");
+  }
+  const destination = toCountries(checkout.shipCountries).find(
+    (c) => c.name.toLowerCase() === data.address.country.toLowerCase(),
+  );
+  if (!destination) return fail(`Sorry, we don't deliver to ${data.address.country} yet.`);
+  data.address.country = destination.name;
+
+  // Every order emails and texts the address and number given, so cap how many
+  // one of them can trigger in a short time (protects strangers from being
+  // spammed through the store, and the store from the SMS bill).
+  const [{ recent }] = await db
+    .select({ recent: sql<number>`count(*)::int` })
+    .from(orders)
+    .where(
+      and(
+        gte(orders.createdAt, new Date(Date.now() - ORDER_WINDOW_MS)),
+        or(eq(orders.email, data.email), eq(orders.phone, data.phone)),
+      ),
+    );
+  if (recent >= MAX_ORDERS_PER_WINDOW) {
+    return fail("You've placed several orders in the last few minutes. Please wait a little, or contact us.");
   }
 
   const quote = await buildQuote(data.lines as CartLineInput[], data.couponCode);
@@ -186,6 +212,8 @@ export async function placeOrderAction(input: unknown): Promise<ActionResult<{ o
         .where(eq(users.id, user.id));
     }
     if (reserve.size) updateTag(TAGS.catalog);
+    // Cash-on-delivery orders are confirmed now; online orders once payment succeeds.
+    if (data.paymentMethod === "cod") await sendOrderConfirmation(orderId);
     return { ok: true, orderId };
   } catch (error) {
     if (error instanceof OrderError) return fail(error.message);
@@ -264,6 +292,7 @@ export async function confirmPaymentAction(input: unknown): Promise<ActionResult
       updatedAt: new Date(),
     })
     .where(eq(orders.id, order.id));
+  await sendOrderConfirmation(order.id);
   return { ok: true };
 }
 

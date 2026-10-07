@@ -2,18 +2,40 @@ import { eq } from "drizzle-orm";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { z } from "zod";
-import { EntityForm } from "@/components/admin/crud";
+import { ActionButton, EntityForm } from "@/components/admin/crud";
 import { Badge, Card, ORDER_TONE, PageHeader, PAYMENT_TONE } from "@/components/admin/ui";
 import { Bottle } from "@/components/store/bottle";
 import { db } from "@/db";
-import { orders } from "@/db/schema";
-import { updateOrderAction } from "@/lib/actions/admin";
+import { orders, type Delivery } from "@/db/schema";
+import {
+  resendOrderConfirmationAction,
+  sendShippingUpdateAction,
+  updateOrderAction,
+} from "@/lib/actions/admin";
 import { adminPage } from "@/lib/admin";
 import { orderGroups } from "@/lib/admin-fields";
 import { getSettings } from "@/lib/data";
 import { formatDateTime, formatMoney } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Order" };
+
+const DELIVERY_TONE = { sent: "green", failed: "red", skipped: "neutral" } as const;
+const DELIVERY_TEXT = { sent: "Sent", failed: "Failed", skipped: "Not sent" } as const;
+
+function DeliveryRow({ label, to, delivery }: { label: string; to: string; delivery?: Delivery }) {
+  return (
+    <li>
+      <div className="flex items-center justify-between gap-3">
+        <span className="font-medium text-zinc-900">{label}</span>
+        <Badge tone={delivery ? DELIVERY_TONE[delivery.status] : "neutral"}>
+          {delivery ? DELIVERY_TEXT[delivery.status] : "Not sent yet"}
+        </Badge>
+      </div>
+      <p className="truncate text-xs text-zinc-500">{to}</p>
+      {delivery?.detail && <p className="mt-0.5 text-xs text-zinc-500">{delivery.detail}</p>}
+    </li>
+  );
+}
 
 export default async function OrderPage({ params }: { params: Promise<{ id: string }> }) {
   await adminPage();
@@ -156,6 +178,38 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
               <p className="pt-1 text-xs text-zinc-400">
                 {order.userId ? "Registered customer" : "Guest checkout"}
               </p>
+            </div>
+          </Card>
+          <Card title="Messages to the customer">
+            <ul className="space-y-3 text-sm">
+              <DeliveryRow label="Confirmation email" to={order.email} delivery={order.notifications?.email} />
+              <DeliveryRow label="Confirmation text" to={order.phone} delivery={order.notifications?.sms} />
+              <DeliveryRow label="Shipping email" to={order.email} delivery={order.notifications?.shipped} />
+              <DeliveryRow label="Delivery email" to={order.email} delivery={order.notifications?.delivered} />
+            </ul>
+            <p className="mt-3 text-xs text-zinc-500">
+              {!order.confirmationSentAt && order.paymentMethod === "razorpay"
+                ? "The confirmation is sent automatically once the online payment is received. "
+                : ""}
+              The shipping and delivery emails go out when you set the status to Shipped or Delivered.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <ActionButton
+                action={resendOrderConfirmationAction.bind(null, order.id)}
+                confirm="Send the order confirmation to this customer now?"
+              >
+                {order.confirmationSentAt ? "Resend confirmation" : "Send confirmation"}
+              </ActionButton>
+              {/* Offered once the order has reached that stage, e.g. to resend after adding a tracking link. */}
+              {(order.status === "shipped" || order.status === "delivered") && (
+                <ActionButton
+                  action={sendShippingUpdateAction.bind(null, order.id, order.status)}
+                  confirm={`Email the customer that this order has ${order.status === "shipped" ? "shipped" : "been delivered"}?`}
+                >
+                  {order.notifications?.[order.status] ? "Resend" : "Send"}{" "}
+                  {order.status === "shipped" ? "shipping email" : "delivery email"}
+                </ActionButton>
+              )}
             </div>
           </Card>
           <Card title="Ship to">

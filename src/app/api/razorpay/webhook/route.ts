@@ -1,6 +1,7 @@
 import { and, eq, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { orders } from "@/db/schema";
+import { sendOrderConfirmation } from "@/lib/notify/order-emails";
 import { verifyWebhookSignature } from "@/lib/razorpay";
 
 type WebhookBody = {
@@ -38,6 +39,8 @@ export async function POST(request: Request) {
           updatedAt: new Date(),
         })
         .where(eq(orders.id, order.id));
+      // No-op if the browser already confirmed this payment and sent it.
+      await sendOrderConfirmation(order.id);
     }
   }
   return Response.json({ received: true });

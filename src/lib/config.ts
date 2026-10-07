@@ -39,8 +39,18 @@ export type CheckoutSettings = {
   codEnabled: boolean;
   onlineEnabled: boolean;
   orderPrefix: string;
-  country: string;
+  /** Countries the store delivers to (English names). The first one is preselected at checkout. */
+  shipCountries: string[];
   checkoutNote: string;
+  /** Send the customer a confirmation email / text message when an order is placed. */
+  confirmationEmail: boolean;
+  confirmationSms: boolean;
+  /** Email the customer when their order is marked as shipped, and again when delivered. */
+  shippingEmail: boolean;
+  /** Extra line shown in the confirmation email, under the greeting. */
+  emailNote: string;
+  /** Placeholders: {store} {name} {order} {total} {link}. */
+  smsTemplate: string;
 };
 
 export type BuilderStep = {
@@ -147,8 +157,13 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     codEnabled: true,
     onlineEnabled: true,
     orderPrefix: "AU",
-    country: "India",
+    shipCountries: ["India"],
     checkoutNote: "Prices include all taxes. Bespoke blends ship within 5–7 working days.",
+    confirmationEmail: true,
+    confirmationSms: true,
+    shippingEmail: true,
+    emailNote: "We will send you a tracking number as soon as your order ships.",
+    smsTemplate: "{store}: Thank you {name}! Your order {order} for {total} is confirmed. Track it: {link}",
   },
   builder: {
     enabled: true,
@@ -202,6 +217,16 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   },
 };
 
+/** Settings saved before the delivery-country list existed held one free-text `country`. */
+function upgradeCheckout(stored: unknown) {
+  if (typeof stored !== "object" || stored === null) return stored;
+  const value = stored as { shipCountries?: unknown; country?: unknown };
+  if (Array.isArray(value.shipCountries) || typeof value.country !== "string" || !value.country.trim()) {
+    return stored;
+  }
+  return { ...value, shipCountries: [value.country.trim()] };
+}
+
 /** Builds the full settings object from stored rows, falling back to defaults for anything missing. */
 export function resolveSettings(rows: { key: string; value: unknown }[]): SiteSettings {
   const stored = Object.fromEntries(rows.map((r) => [r.key, r.value]));
@@ -209,7 +234,7 @@ export function resolveSettings(rows: { key: string; value: unknown }[]): SiteSe
     store: withDefaults(DEFAULT_SETTINGS.store, stored.store),
     theme: withDefaults(DEFAULT_SETTINGS.theme, stored.theme),
     navigation: withDefaults(DEFAULT_SETTINGS.navigation, stored.navigation),
-    checkout: withDefaults(DEFAULT_SETTINGS.checkout, stored.checkout),
+    checkout: withDefaults(DEFAULT_SETTINGS.checkout, upgradeCheckout(stored.checkout)),
     builder: withDefaults(DEFAULT_SETTINGS.builder, stored.builder),
   };
 }

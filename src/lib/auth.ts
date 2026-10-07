@@ -57,14 +57,16 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
   let userId: string | undefined;
+  let issuedAt = 0;
   try {
     const { payload } = await jwtVerify(token, secret(), { algorithms: ["HS256"] });
     userId = payload.sub;
+    issuedAt = payload.iat ?? 0;
   } catch {
     return null;
   }
   if (!userId) return null;
-  const [user] = await db
+  const [row] = await db
     .select({
       id: users.id,
       name: users.name,
@@ -72,12 +74,26 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
       role: users.role,
       phone: users.phone,
       address: users.address,
+      passwordChangedAt: users.passwordChangedAt,
     })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
-  return user ?? null;
+  if (!row) return null;
+  const { passwordChangedAt, ...user } = row;
+  // Changing or resetting a password signs out every device that was signed in before it.
+  if (passwordChangedAt && issuedAt < Math.floor(passwordChangedAt.getTime() / 1000)) return null;
+  return user;
 });
+
+/**
+ * The value to store in `users.passwordChangedAt`: now, rounded down to the
+ * second, because that is the precision of a session's issue time. A session
+ * created right after the change must still count as newer.
+ */
+export function passwordChangedNow() {
+  return new Date(Math.floor(Date.now() / 1000) * 1000);
+}
 
 export class UnauthorizedError extends Error {
   constructor() {

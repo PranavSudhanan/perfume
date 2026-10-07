@@ -10,8 +10,11 @@ import { FormFields } from "./fields";
 import { ui } from "./ui";
 
 type Value = Record<string, unknown>;
-type SaveAction = (value: unknown) => Promise<ActionResult<{ id?: string }>>;
-type Status = { ok: boolean; text: string } | null;
+/** A save may add a note for the admin, e.g. whether an email went out; `warning` flags a problem. */
+type SaveAction = (
+  value: unknown,
+) => Promise<ActionResult<{ id?: string; message?: string; warning?: boolean }>>;
+type Status = { ok: boolean; text: string; warning?: boolean } | null;
 
 /** Keeps `slug` in step with the name while the admin hasn't hand-edited it. */
 function withAutoSlug(previous: Value, next: Value, slugFrom?: string): Value {
@@ -53,9 +56,12 @@ export function SaveBar({
         {status ? (
           <span
             role="status"
-            className={cn("flex items-center gap-1.5 text-sm", status.ok ? "text-emerald-700" : "text-red-600")}
+            className={cn(
+              "flex max-w-md items-center gap-1.5 text-sm",
+              !status.ok ? "text-red-600" : status.warning ? "text-amber-700" : "text-emerald-700",
+            )}
           >
-            {status.ok && <Check className="size-4" />}
+            {status.ok && !status.warning && <Check className="size-4 shrink-0" />}
             {status.text}
           </span>
         ) : (
@@ -115,7 +121,7 @@ export function EntityForm({
         return;
       }
       setDirty(false);
-      setStatus({ ok: true, text: "Saved" });
+      setStatus({ ok: true, text: result.message ?? "Saved", warning: result.warning });
       if (redirectTo && result.id && !value.id) {
         router.replace(redirectTo.replace("{id}", result.id));
       } else {

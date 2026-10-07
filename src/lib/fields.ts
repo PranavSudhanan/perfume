@@ -37,6 +37,13 @@ export type Field =
       allowEmpty?: string;
     })
   | (Base & {
+      /** Pick any number of options from a list; the value is an array of option values. */
+      type: "multiselect";
+      options?: Option[];
+      source?: string;
+      addLabel?: string;
+    })
+  | (Base & {
       type: "list";
       fields: Field[];
       itemLabel: string;
@@ -56,6 +63,7 @@ export function emptyValue(field: Field): unknown {
     case "images":
     case "tags":
     case "list":
+    case "multiselect":
       return [];
     case "select":
       return field.allowEmpty !== undefined ? "" : (field.options?.[0]?.value ?? "");

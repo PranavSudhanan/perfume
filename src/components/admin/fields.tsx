@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { listMediaAction, type MediaItem } from "@/lib/actions/admin";
-import { emptyItem, type Field, type FieldSources } from "@/lib/fields";
+import { emptyItem, type Field, type FieldSources, type Option } from "@/lib/fields";
 import { cn } from "@/lib/utils";
 import { ui } from "./ui";
 import { uploadImage } from "./upload";
@@ -130,6 +130,16 @@ function FieldControl({
           value={Array.isArray(value) ? (value as string[]) : []}
           onChange={onChange}
           placeholder={field.placeholder}
+        />
+      );
+      break;
+    case "multiselect":
+      control = (
+        <MultiSelect
+          value={Array.isArray(value) ? (value as string[]) : []}
+          onChange={onChange}
+          options={field.options ?? sources?.[field.source ?? ""] ?? []}
+          addLabel={field.addLabel ?? "Add…"}
         />
       );
       break;
@@ -254,6 +264,58 @@ function ColorInput({ value, onChange }: { value: string; onChange: (v: string) 
           <X className="size-4" />
         </button>
       )}
+    </div>
+  );
+}
+
+/** Chosen options as removable chips, plus a dropdown of the ones not chosen yet. */
+function MultiSelect({
+  value,
+  onChange,
+  options,
+  addLabel,
+}: {
+  value: string[];
+  onChange: (v: string[]) => void;
+  options: Option[];
+  addLabel: string;
+}) {
+  const label = (v: string) => options.find((o) => o.value === v)?.label ?? v;
+  const remaining = options.filter((o) => !value.includes(o.value));
+  return (
+    <div className="space-y-2">
+      {value.length > 0 && (
+        <ul className="flex flex-wrap gap-1.5">
+          {value.map((v, i) => (
+            <li key={v} className="inline-flex items-center gap-1 rounded-md bg-zinc-100 py-1 pr-1 pl-2.5 text-sm">
+              {label(v)}
+              {i === 0 && value.length > 1 && <span className="text-xs text-zinc-400">(default)</span>}
+              <button
+                type="button"
+                onClick={() => onChange(value.filter((x) => x !== v))}
+                className="rounded p-0.5 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-900"
+                aria-label={`Remove ${label(v)}`}
+              >
+                <X className="size-3" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <select
+        value=""
+        onChange={(e) => e.target.value && onChange([...value, e.target.value])}
+        disabled={remaining.length === 0}
+        aria-label={addLabel}
+        className={cn(ui.input, "cursor-pointer sm:max-w-xs")}
+      >
+        <option value="">{addLabel}</option>
+        {remaining.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

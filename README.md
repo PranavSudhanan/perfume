@@ -93,6 +93,59 @@ Cash on delivery works out of the box. To accept cards and UPI:
 
 Start with Razorpay **test** keys and place a test order before switching to live keys.
 
+### Emails and text messages to customers
+
+The store sends three kinds of email, all through the one mail connection described below:
+
+| Email | Sent when |
+| --- | --- |
+| **Order confirmation** | An order is placed (cash on delivery) or paid (online) |
+| **Shipping update** | You set an order's status to *Shipped* (includes the tracking number and link), and again when you set it to *Delivered* |
+| **Password reset** | Someone uses "Forgot your password?" on the sign-in page |
+
+When an order is placed the customer also gets:
+
+- **A confirmation popup** on screen — always, nothing to set up.
+- **A text message (SMS)** with the order number and a tracking link — once you connect an SMS service.
+
+The popup only says "email sent" or "text sent" when that message really went out. Each order in
+the admin lists every message sent for it, any error, and buttons to send them again (useful after
+adding a tracking link, or fixing a failed delivery).
+
+**Password reset** works for customers and admins alike. The emailed link works once and expires
+after 60 minutes; using it signs the person in and signs out every other device. Until a mail
+service is connected the "forgot password" page says so and points to your contact email instead,
+and `npm run admin:reset` remains the way to recover the admin account.
+
+**Email** is sent over SMTP, so almost any mail service works. Add these to Vercel's environment
+variables and redeploy:
+
+| Variable | Example |
+| --- | --- |
+| `SMTP_HOST` | `smtp.gmail.com` |
+| `SMTP_PORT` | `465` |
+| `SMTP_USER` | `orders@yourbrand.com` |
+| `SMTP_PASS` | the mailbox password, or for Gmail an [app password](https://myaccount.google.com/apppasswords) |
+| `EMAIL_FROM` | `Aurelle <orders@yourbrand.com>` (optional) |
+
+Then open Admin → Settings → Checkout & notifications and press **Send me a test email**.
+Gmail allows about 500 emails a day; for more, use a transactional service such as Brevo, Resend or
+Amazon SES with the SMTP details they give you.
+
+**SMS** needs one provider:
+
+- **Fast2SMS** (Indian numbers): set `FAST2SMS_API_KEY`. Messages go through its "Quick SMS"
+  route, which needs no DLT registration but costs more per message than a DLT route.
+- **Twilio** (any country): set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` and `TWILIO_FROM`
+  (your Twilio number, or a Messaging Service id starting with `MG`).
+
+The wording of the text message, an extra line for the confirmation email, and on/off switches for
+the confirmation email, shipping emails and text message are under Admin → Settings → Checkout &
+notifications.
+
+Locally, `NOTIFICATIONS_PREVIEW="true"` in `.env` writes each email and text to `.data/outbox`
+instead of sending it, so you can open the email in a browser. It is ignored in production.
+
 ## Good to know
 
 - **Demo photos** are free stock images loaded from Unsplash's servers, chosen to show no
@@ -101,9 +154,22 @@ Start with Razorpay **test** keys and place a test order before switching to liv
   builder stays an illustration on purpose — it recolours and relabels live as customers choose.
 - **Images** uploaded in the admin are compressed in the browser and stored in Postgres, so no
   storage service is needed. This suits a catalogue of a few hundred images on Neon's free tier.
-- **Emails are not sent.** Customers see their order confirmation on screen and can track orders at
-  `/track`; new orders and contact messages appear in the admin. Connecting an email provider for
-  order notifications is the natural next step.
+- **The store itself is not emailed.** Customers get the emails described above, but there is no
+  new-order alert to the shop owner; new orders and contact messages appear in the admin.
+- **Changing a password signs out other devices.** After a password change or reset, sessions
+  started before it stop working.
+- **Order limit:** one email address or phone number can place at most 5 orders in 15 minutes, so
+  the store can't be used to flood someone with confirmation messages.
+- **Address dropdowns:** Country, State and City are dropdowns at checkout and in the customer's
+  account. Customers can only pick countries listed under Admin → Settings → Checkout &
+  notifications → "Countries you deliver to" (India by default), and the server refuses any other.
+  The city dropdown is searchable, and a customer whose town isn't listed can type it in. For the
+  few countries with no state or city list, those fields become ordinary text boxes.
+- **Location data** (250 countries, about 5,300 states and 152,000 cities) is stored as small
+  files in `public/geo`, loaded only for the country a customer picks. It comes from the
+  [Countries States Cities Database](https://github.com/dr5hn/countries-states-cities-database)
+  under the Open Database License; `public/geo/ATTRIBUTION.txt` carries the required credit.
+  `scripts/gen-geo.mjs` explains how to refresh it.
 - **Forgot the admin password?** Set a new `ADMIN_PASSWORD`, then run `npm run admin:reset`
   (locally, with `DATABASE_URL` pointing at the live database).
 - **Prices** are stored in the currency's minor unit (paise). Change currency under
@@ -133,7 +199,7 @@ src/app/api            Image uploads, media serving, Razorpay webhook
 src/components         UI — sections/ (page sections), store/, admin/
 src/db                 Database schema and connection
 src/lib                Business logic: pricing, auth, settings, server actions
-scripts                Database setup, demo content, artwork generator
+scripts                Database setup, demo content, artwork and location-data generators
 drizzle                SQL migrations
 ```
 

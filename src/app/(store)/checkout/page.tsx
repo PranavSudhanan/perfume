@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { CheckoutForm } from "@/components/store/checkout-form";
 import { getCurrentUser } from "@/lib/auth";
 import { getSettings } from "@/lib/data";
+import { toCountries } from "@/lib/geo";
 import { razorpayConfigured } from "@/lib/razorpay";
 
 export const metadata: Metadata = { title: "Checkout", robots: { index: false } };
@@ -23,7 +24,7 @@ export default async function CheckoutPage() {
           address: user?.address ?? null,
         }}
         methods={methods}
-        country={checkout.country}
+        countries={toCountries(checkout.shipCountries)}
         note={checkout.checkoutNote}
         signedIn={!!user}
       />

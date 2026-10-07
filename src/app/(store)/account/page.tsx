@@ -7,6 +7,7 @@ import { db } from "@/db";
 import { orders } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 import { getSettings } from "@/lib/data";
+import { toCountries } from "@/lib/geo";
 import { formatDate, formatMoney } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "My account", robots: { index: false } };
@@ -84,7 +85,7 @@ export default async function AccountPage() {
             <h2 className="heading mb-6 text-3xl">Your details</h2>
             <ProfileForm
               user={{ name: user.name, phone: user.phone, address: user.address }}
-              country={checkout.country}
+              countries={toCountries(checkout.shipCountries)}
             />
           </section>
           <section>
