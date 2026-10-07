@@ -22,7 +22,7 @@ import {
   users,
 } from "@/db/schema";
 import { requireAdmin, UnauthorizedError } from "@/lib/auth";
-import { SETTINGS_KEYS, type SettingsKey } from "@/lib/config";
+import { resolveSettings, SETTINGS_KEYS, type SettingsKey } from "@/lib/config";
 import { TAGS } from "@/lib/data";
 import { findCountry } from "@/lib/geo";
 import { sendTestEmail } from "@/lib/notify/account-emails";
@@ -210,16 +210,44 @@ const settingsSchemas: Record<SettingsKey, z.ZodType> = {
     ),
 };
 
+/** Text fields that usually spell out the store's name and should follow it when it changes. */
+const NAME_BEARING_FIELDS = ["seoTitle", "seoDescription"] as const;
+
+/**
+ * Renaming the store also renames it in the search-engine title and description,
+ * so the browser tab and search results don't keep showing the old name. A field
+ * the admin edited in the same save is left exactly as they typed it.
+ */
+async function carryNewStoreName(next: Record<string, unknown>) {
+  const [row] = await db.select({ value: settings.value }).from(settings).where(eq(settings.key, "store"));
+  const previous = resolveSettings(row ? [{ key: "store", value: row.value }] : []).store;
+  const oldName = previous.name.trim();
+  const newName = String(next.name ?? "").trim();
+  if (!oldName || !newName || oldName === newName) return false;
+
+  let changed = false;
+  for (const field of NAME_BEARING_FIELDS) {
+    const before = previous[field];
+    if (next[field] !== before || !before.includes(oldName)) continue;
+    next[field] = before.split(oldName).join(newName);
+    changed = true;
+  }
+  return changed;
+}
+
 export async function saveSettingsAction(key: SettingsKey, value: unknown) {
   return guard(async () => {
     if (!SETTINGS_KEYS.includes(key)) throw new UserError("Unknown settings group.");
     const parsed = settingsSchemas[key].parse(value) as Record<string, unknown>;
+    const renamedInTitles = key === "store" && (await carryNewStoreName(parsed));
     await db
       .insert(settings)
       .values({ key, value: parsed })
       .onConflictDoUpdate({ target: settings.key, set: { value: parsed, updatedAt: new Date() } });
     updateTag(TAGS.settings);
-    return {};
+    return renamedInTitles
+      ? { message: "Saved — the new name is now used across the site, including the page title" }
+      : {};
   });
 }
 

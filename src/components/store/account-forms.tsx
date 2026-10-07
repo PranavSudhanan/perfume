@@ -238,7 +238,7 @@ export function PasswordForm() {
   );
 }
 
-export function TrackForm() {
+export function TrackForm({ orderPrefix }: { orderPrefix: string }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -259,7 +259,7 @@ export function TrackForm() {
     >
       <label className="block">
         <span className="field-label">Order number</span>
-        <input name="orderNumber" required placeholder="e.g. AU-7K3M9QX" className="field uppercase placeholder:normal-case" />
+        <input name="orderNumber" required placeholder={`e.g. ${orderPrefix ? `${orderPrefix}-` : ""}7K3M9QX`} className="field uppercase placeholder:normal-case" />
       </label>
       <label className="block">
         <span className="field-label">Email used at checkout</span>

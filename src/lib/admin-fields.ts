@@ -244,7 +244,13 @@ export const storeGroups: Group[] = [
   {
     title: "Brand",
     fields: [
-      { name: "name", label: "Store name", type: "text", half: true },
+      {
+        name: "name",
+        label: "Store name",
+        type: "text",
+        half: true,
+        help: "Shown in the header, footer, browser tab, emails and text messages.",
+      },
       { name: "tagline", label: "Tagline", type: "text", half: true },
       { name: "logo", label: "Logo", type: "image", help: "Optional. Without a logo the store name is shown as text." },
     ],
